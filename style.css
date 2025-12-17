@@ -1,0 +1,60 @@
+body {
+  margin: 0;
+  background: linear-gradient(180deg, #0b1622, #040b14);
+  color: #d9e6ff;
+  font-family: system-ui, sans-serif;
+}
+
+.logo {
+  text-align: center;
+  margin: 20px 0;
+  letter-spacing: 2px;
+}
+
+.card {
+  background: rgba(15,30,50,0.9);
+  margin: 12px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(100,160,255,0.2);
+}
+
+.card h3 {
+  margin-top: 0;
+  color: #8ab4ff;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.row span {
+  font-size: 14px;
+}
+
+input {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  background: #0a1624;
+  border: 1px solid #1e3a5f;
+  color: white;
+  border-radius: 8px;
+}
+
+button {
+  margin-top: 10px;
+  width: 100%;
+  padding: 10px;
+  background: #6ea8ff;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.faded {
+  opacity: 0.75;
+}
