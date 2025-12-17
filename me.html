@@ -1,43 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>My Interface</title>
+  <title>Let's Do It</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body data-user="me">
-<h1>⚔️ Let's Do IT</h1>
-<body data-user="me">
 
 <h1 class="logo">GOALS</h1>
 
-<!-- MY TODAY -->
+<!-- ================= MY TODAY ================= -->
 <div class="card">
   <h3>My Goals (Today)</h3>
 
-  <div class="row">
-    <span>Push-ups</span>
-    <span id="me-pushups">0/100</span>
-    <input type="checkbox" id="me-pushups-check" disabled>
-  </div>
-
-  <div class="row">
-    <span>Sit-ups</span>
-    <span id="me-situps">0/100</span>
-    <input type="checkbox" id="me-situps-check" disabled>
-  </div>
-
-  <div class="row">
-    <span>Squats</span>
-    <span id="me-squats">0/100</span>
-    <input type="checkbox" id="me-squats-check" disabled>
-  </div>
-
-  <div class="row">
-    <span>Dips</span>
-    <span id="me-dips">0/100</span>
-    <input type="checkbox" id="me-dips-check" disabled>
-  </div>
+  <div class="row"><span>Push-ups</span><span id="me-pushups">0/100</span><input type="checkbox" id="me-pushups-check" disabled></div>
+  <div class="row"><span>Sit-ups</span><span id="me-situps">0/100</span><input type="checkbox" id="me-situps-check" disabled></div>
+  <div class="row"><span>Squats</span><span id="me-squats">0/100</span><input type="checkbox" id="me-squats-check" disabled></div>
+  <div class="row"><span>Dips</span><span id="me-dips">0/100</span><input type="checkbox" id="me-dips-check" disabled></div>
 
   <input id="pushups" placeholder="Push-ups">
   <input id="situps" placeholder="Sit-ups">
@@ -47,38 +26,52 @@
   <button onclick="updateData()">Update</button>
 </div>
 
-<!-- MY YESTERDAY -->
+<!-- ================= MY YESTERDAY ================= -->
 <div class="card faded">
   <h3>My Goals (Yesterday)</h3>
-
   <div class="row"><span>Push-ups</span><span id="my-y-pushups">0</span></div>
   <div class="row"><span>Sit-ups</span><span id="my-y-situps">0</span></div>
   <div class="row"><span>Squats</span><span id="my-y-squats">0</span></div>
   <div class="row"><span>Dips</span><span id="my-y-dips">0</span></div>
 </div>
 
-<!-- FRIEND TODAY -->
+<!-- ================= HARSH TODAY ================= -->
 <div class="card">
-  <h3>Friend (Today)</h3>
-
-  <div class="row"><span>Push-ups</span><span id="fr-pushups">0</span></div>
-  <div class="row"><span>Sit-ups</span><span id="fr-situps">0</span></div>
-  <div class="row"><span>Squats</span><span id="fr-squats">0</span></div>
-  <div class="row"><span>Dips</span><span id="fr-dips">0</span></div>
+  <h3>Harsh's Goals (Today)</h3>
+  <div class="row"><span>Push-ups</span><span id="harsh-pushups">0/100</span></div>
+  <div class="row"><span>Sit-ups</span><span id="harsh-situps">0/100</span></div>
+  <div class="row"><span>Squats</span><span id="harsh-squats">0/100</span></div>
+  <div class="row"><span>Dips</span><span id="harsh-dips">0/100</span></div>
 </div>
 
-<!-- FRIEND YESTERDAY -->
+<!-- ================= HARSH YESTERDAY ================= -->
 <div class="card faded">
-  <h3>Friend (Yesterday)</h3>
+  <h3>Harsh's Goals (Yesterday)</h3>
+  <div class="row"><span>Push-ups</span><span id="harsh-y-pushups">0</span></div>
+  <div class="row"><span>Sit-ups</span><span id="harsh-y-situps">0</span></div>
+  <div class="row"><span>Squats</span><span id="harsh-y-squats">0</span></div>
+  <div class="row"><span>Dips</span><span id="harsh-y-dips">0</span></div>
+</div>
 
-  <div class="row"><span>Push-ups</span><span id="fr-y-pushups">0</span></div>
-  <div class="row"><span>Sit-ups</span><span id="fr-y-situps">0</span></div>
-  <div class="row"><span>Squats</span><span id="fr-y-squats">0</span></div>
-  <div class="row"><span>Dips</span><span id="fr-y-dips">0</span></div>
+<!-- ================= SHASHANK TODAY ================= -->
+<div class="card">
+  <h3>Shashank's Quest (Today)</h3>
+  <div class="row"><span>Sit-ups</span><span id="shashank-situps">0/100</span></div>
+</div>
+
+<!-- ================= SHASHANK YESTERDAY ================= -->
+<div class="card faded">
+  <h3>Shashank's Quest (Yesterday)</h3>
+  <div class="row"><span>Sit-ups</span><span id="shashank-y-situps">0</span></div>
+</div>
+
+<!-- ================= MESSAGE SECTION ================= -->
+<div class="card">
+  <h3>Daily Message</h3>
+  <textarea id="dailyMessage" placeholder="Write anything for everyone..."></textarea>
+  <button onclick="updateMessage()">Send Message</button>
 </div>
 
 <script type="module" src="app.js"></script>
-</body>
-
 </body>
 </html>
