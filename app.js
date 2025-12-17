@@ -7,7 +7,7 @@ import {
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-/* ---------------- FIREBASE CONFIG ---------------- */
+/* ================= FIREBASE ================= */
 
 const firebaseConfig = {
   apiKey: "AIzaSyClCmA0XFOjVJDsbrgDa6-LieQnBpsFzpw",
@@ -21,126 +21,142 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ---------------- USERS ---------------- */
+/* ================= USERS ================= */
 
-const userId = document.body.dataset.user; // "me" or "friend"
-const friendId = userId === "me" ? "friend" : "me";
+const userId = document.body.dataset.user; // me | harsh | shashank
 
-/* ---------------- DATE HELPERS ---------------- */
+/* ================= DATE (4 AM LOGIC) ================= */
 
-// Returns the logical "day key" based on 4 AM reset
-function getResetDayKey(offset = 0) {
-  const now = new Date();
-
-  // If before 4 AM, still count as previous day
-  if (now.getHours() < 4) {
-    now.setDate(now.getDate() - 1);
-  }
-
-  now.setDate(now.getDate() - offset);
-  return now.toISOString().split("T")[0];
+function dayKey(offset = 0) {
+  const d = new Date();
+  if (d.getHours() < 4) d.setDate(d.getDate() - 1);
+  d.setDate(d.getDate() - offset);
+  return d.toISOString().split("T")[0];
 }
 
-/* ---------------- RESET ON OPEN ---------------- */
+/* ================= RESET ON OPEN ================= */
 
 async function checkDailyReset(uid) {
-  const todayKey = getResetDayKey();
+  const today = dayKey();
   const metaRef = doc(db, "meta", uid);
   const metaSnap = await getDoc(metaRef);
 
-  // First time ever
   if (!metaSnap.exists()) {
-    await setDoc(metaRef, { lastDay: todayKey });
+    await setDoc(metaRef, { day: today });
     return;
   }
 
-  const lastDay = metaSnap.data().lastDay;
+  if (metaSnap.data().day === today) return;
 
-  // Same logical day → nothing to do
-  if (lastDay === todayKey) return;
-
-  // New day detected → move data to history & reset
   const userRef = doc(db, "users", uid);
-  const userSnap = await getDoc(userRef);
+  const snap = await getDoc(userRef);
 
-  if (userSnap.exists()) {
-    // Save yesterday
-    await setDoc(
-      doc(db, "history", lastDay, uid),
-      userSnap.data()
-    );
-
-    // Reset today
-    await setDoc(userRef, {
-      pushups: 0,
-      situps: 0,
-      squats: 0,
-      dips: 0,
-      updatedAt: new Date()
-    });
+  if (snap.exists()) {
+    await setDoc(doc(db, "history", metaSnap.data().day, uid), snap.data());
   }
 
-  // Update meta
-  await setDoc(metaRef, { lastDay: todayKey });
-}
-
-/* ---------------- UPDATE DATA ---------------- */
-
-window.updateData = async () => {
-  const data = {
-    pushups: +pushups.value || 0,
-    situps: +situps.value || 0,
-    squats: +squats.value || 0,
-    dips: +dips.value || 0,
+  await setDoc(userRef, {
+    pushups: 0,
+    situps: 0,
+    squats: 0,
+    dips: 0,
     updatedAt: new Date()
-  };
-
-  await setDoc(doc(db, "users", userId), data);
-  await setDoc(doc(db, "history", getResetDayKey(), userId), data);
-};
-
-/* ---------------- UI HELPERS ---------------- */
-
-function updateUI(prefix, d) {
-  ["pushups", "situps", "squats", "dips"].forEach(ex => {
-    const value = d[ex] || 0;
-    document.getElementById(prefix + ex).innerText = `${value}/100`;
-
-    const chk = document.getElementById(prefix + ex + "-check");
-    if (chk) chk.checked = value >= 100;
   });
+
+  await setDoc(metaRef, { day: today });
+  await setDoc(doc(db, "message", "daily"), { text: "" });
 }
 
-/* ---------------- LISTENERS ---------------- */
-
-function listenToday(id, prefix) {
-  onSnapshot(doc(db, "users", id), snap => {
-    if (snap.exists()) {
-      updateUI(prefix, snap.data());
-    }
-  });
-}
-
-function listenYesterday(id, prefix) {
-  onSnapshot(doc(db, "history", getResetDayKey(1), id), snap => {
-    if (!snap.exists()) return;
-    const d = snap.data();
-
-    document.getElementById(prefix + "pushups").innerText = d.pushups ?? 0;
-    document.getElementById(prefix + "situps").innerText = d.situps ?? 0;
-    document.getElementById(prefix + "squats").innerText = d.squats ?? 0;
-    document.getElementById(prefix + "dips").innerText = d.dips ?? 0;
-  });
-}
-
-/* ---------------- INIT ---------------- */
-
-// Reset check (runs once on page load)
 checkDailyReset(userId);
 
-// Live listeners
-listenToday(userId, "me-");
-listenToday(friendId, "fr-");
+/* ================= UPDATE DATA (PARTIAL) ================= */
 
-listenYesterday(userId, "my-y-");
-listenYesterday(friendId, "fr-y-");
+window.updateData = async () => {
+  const ref = doc(db, "users", userId);
+  const snap = await getDoc(ref);
+  const prev = snap.exists() ? snap.data() : {};
+
+  const updated = { ...prev };
+
+  ["pushups", "situps", "squats", "dips"].forEach(f => {
+    const el = document.getElementById(f);
+    if (el && el.value !== "") {
+      updated[f] = Number(el.value);
+    }
+  });
+
+  updated.updatedAt = new Date();
+
+  await setDoc(ref, updated);
+  await setDoc(doc(db, "history", dayKey(), userId), updated);
+};
+
+/* ================= UI HELPERS ================= */
+
+function updateToday(prefix, d) {
+  ["pushups", "situps", "squats", "dips"].forEach(ex => {
+    if (!document.getElementById(prefix + ex)) return;
+
+    const val = d[ex] || 0;
+    document.getElementById(prefix + ex).innerText = `${val}/100`;
+
+    const chk = document.getElementById(prefix + ex + "-check");
+    if (chk) chk.checked = val >= 100;
+  });
+}
+
+function updateYesterday(prefix, d) {
+  ["pushups", "situps", "squats", "dips"].forEach(ex => {
+    if (!document.getElementById(prefix + ex)) return;
+    document.getElementById(prefix + ex).innerText = d[ex] ?? 0;
+  });
+}
+
+/* ================= LISTENERS ================= */
+
+// ME
+onSnapshot(doc(db, "users", "me"), snap => {
+  if (snap.exists()) updateToday("me-", snap.data());
+});
+onSnapshot(doc(db, "history", dayKey(1), "me"), snap => {
+  if (snap.exists()) updateYesterday("my-y-", snap.data());
+});
+
+// HARSH
+onSnapshot(doc(db, "users", "harsh"), snap => {
+  if (snap.exists()) updateToday("harsh-", snap.data());
+});
+onSnapshot(doc(db, "history", dayKey(1), "harsh"), snap => {
+  if (snap.exists()) updateYesterday("harsh-y-", snap.data());
+});
+
+// SHASHANK (SIT-UPS ONLY)
+onSnapshot(doc(db, "users", "shashank"), snap => {
+  if (!snap.exists()) return;
+  const v = snap.data().situps || 0;
+  if (document.getElementById("shashank-situps"))
+    document.getElementById("shashank-situps").innerText = `${v}/100`;
+});
+onSnapshot(doc(db, "history", dayKey(1), "shashank"), snap => {
+  if (!snap.exists()) return;
+  if (document.getElementById("shashank-y-situps"))
+    document.getElementById("shashank-y-situps").innerText = snap.data().situps ?? 0;
+});
+
+/* ================= MESSAGE ================= */
+
+window.updateMessage = async () => {
+  await setDoc(doc(db, "message", "daily"), {
+    text: dailyMessage.value
+  });
+};
+
+onSnapshot(doc(db, "message", "daily"), snap => {
+  if (!snap.exists()) return;
+
+  if (document.getElementById("dailyMessage"))
+    dailyMessage.value = snap.data().text || "";
+
+  if (document.getElementById("messageView"))
+    messageView.innerText = snap.data().text || "";
+});
