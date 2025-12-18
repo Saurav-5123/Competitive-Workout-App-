@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ================= UPDATE DATA ================= */
 
-  window.updateData = async () => {
+  async function updateData() {
     const data = {};
     let hasUpdate = false;
 
@@ -101,7 +101,32 @@ document.addEventListener("DOMContentLoaded", () => {
       data,
       { merge: true }
     );
-  };
+  }
+
+  /* ================= MESSAGE ================= */
+
+  async function updateMessage() {
+    const textarea = document.getElementById("dailyMessage");
+    if (!textarea || !textarea.value.trim()) return;
+
+    await setDoc(
+      doc(db, "message", "daily"),
+      { text: textarea.value, updatedAt: new Date() },
+      { merge: true }
+    );
+  }
+
+  /* ================= BUTTON BINDING (🔥 FIX) ================= */
+
+  const updateBtn = document.getElementById("updateBtn");
+  if (updateBtn) {
+    updateBtn.addEventListener("click", updateData);
+  }
+
+  const messageBtn = document.getElementById("messageBtn");
+  if (messageBtn) {
+    messageBtn.addEventListener("click", updateMessage);
+  }
 
   /* ================= UI HELPERS ================= */
 
@@ -127,7 +152,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* ================= LISTENERS ================= */
 
-  // SAURAV
   onSnapshot(doc(db, "users", "me"), snap => {
     if (snap.exists()) updateToday("me-", snap.data());
   });
@@ -135,7 +159,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (snap.exists()) updateYesterday("my-y-", snap.data());
   });
 
-  // HARSH
   onSnapshot(doc(db, "users", "harsh"), snap => {
     if (snap.exists()) updateToday("harsh-", snap.data());
   });
@@ -143,7 +166,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (snap.exists()) updateYesterday("harsh-y-", snap.data());
   });
 
-  // SHASHANK
   onSnapshot(doc(db, "users", "shashank"), snap => {
     if (!snap.exists()) return;
     const el = document.getElementById("shashank-situps");
@@ -155,19 +177,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const el = document.getElementById("shashank-y-situps");
     if (el) el.innerText = snap.data().situps ?? 0;
   });
-
-  /* ================= MESSAGE ================= */
-
-  window.updateMessage = async () => {
-    const textarea = document.getElementById("dailyMessage");
-    if (!textarea || !textarea.value.trim()) return;
-
-    await setDoc(
-      doc(db, "message", "daily"),
-      { text: textarea.value, updatedAt: new Date() },
-      { merge: true }
-    );
-  };
 
   onSnapshot(doc(db, "message", "daily"), snap => {
     if (!snap.exists()) return;
