@@ -7,168 +7,177 @@ import {
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-/* ================= FIREBASE ================= */
+document.addEventListener("DOMContentLoaded", () => {
 
-const firebaseConfig = {
-  apiKey: "AIzaSyClCmA0XFOjVJDsbrgDa6-LieQnBpsFzpw",
-  authDomain: "system-7f5a9.firebaseapp.com",
-  projectId: "system-7f5a9"
-};
+  /* ================= FIREBASE ================= */
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+  const firebaseConfig = {
+    apiKey: "AIzaSyClCmA0XFOjVJDsbrgDa6-LieQnBpsFzpw",
+    authDomain: "system-7f5a9.firebaseapp.com",
+    projectId: "system-7f5a9"
+  };
 
-/* ================= USER ================= */
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-const userId = document.body.dataset.user; // me | harsh | shashank
+  /* ================= USER ================= */
 
-/* ================= DATE (4 AM LOGIC) ================= */
+  const userId = document.body.dataset.user; // me | harsh | shashank
 
-function dayKey(offset = 0) {
-  const d = new Date();
-  if (d.getHours() < 4) d.setDate(d.getDate() - 1);
-  d.setDate(d.getDate() - offset);
-  return d.toISOString().split("T")[0];
-}
+  /* ================= DATE (4 AM LOGIC) ================= */
 
-/* ================= RESET ON OPEN ================= */
-
-async function checkDailyReset(uid) {
-  const today = dayKey();
-  const metaRef = doc(db, "meta", uid);
-  const metaSnap = await getDoc(metaRef);
-
-  if (!metaSnap.exists()) {
-    await setDoc(metaRef, { day: today });
-    return;
+  function dayKey(offset = 0) {
+    const d = new Date();
+    if (d.getHours() < 4) d.setDate(d.getDate() - 1);
+    d.setDate(d.getDate() - offset);
+    return d.toISOString().split("T")[0];
   }
 
-  if (metaSnap.data().day === today) return;
+  /* ================= RESET ON OPEN ================= */
 
-  const userRef = doc(db, "users", uid);
-  const snap = await getDoc(userRef);
+  async function checkDailyReset(uid) {
+    const today = dayKey();
+    const metaRef = doc(db, "meta", uid);
+    const metaSnap = await getDoc(metaRef);
 
-  if (snap.exists()) {
-    await setDoc(
-      doc(db, "history", metaSnap.data().day, uid),
-      snap.data()
-    );
-  }
-
-  await setDoc(
-    userRef,
-    { pushups: 0, situps: 0, squats: 0, dips: 0, updatedAt: new Date() },
-    { merge: true }
-  );
-
-  await setDoc(metaRef, { day: today });
-  await setDoc(doc(db, "message", "daily"), { text: "" });
-}
-
-checkDailyReset(userId);
-
-/* ================= UPDATE DATA (FIXED) ================= */
-
-window.updateData = async () => {
-  const data = {};
-  let hasUpdate = false;
-
-  ["pushups", "situps", "squats", "dips"].forEach(f => {
-    const el = document.getElementById(f);
-    if (el && el.value !== "") {
-      data[f] = Number(el.value);
-      hasUpdate = true;
+    if (!metaSnap.exists()) {
+      await setDoc(metaRef, { day: today });
+      return;
     }
+
+    if (metaSnap.data().day === today) return;
+
+    const userRef = doc(db, "users", uid);
+    const snap = await getDoc(userRef);
+
+    if (snap.exists()) {
+      await setDoc(
+        doc(db, "history", metaSnap.data().day, uid),
+        snap.data()
+      );
+    }
+
+    await setDoc(
+      userRef,
+      { pushups: 0, situps: 0, squats: 0, dips: 0, updatedAt: new Date() },
+      { merge: true }
+    );
+
+    await setDoc(metaRef, { day: today });
+    await setDoc(doc(db, "message", "daily"), { text: "" });
+  }
+
+  checkDailyReset(userId);
+
+  /* ================= UPDATE DATA ================= */
+
+  window.updateData = async () => {
+    const data = {};
+    let hasUpdate = false;
+
+    ["pushups", "situps", "squats", "dips"].forEach(f => {
+      const el = document.getElementById(f);
+      if (el && el.value !== "") {
+        data[f] = Number(el.value);
+        hasUpdate = true;
+      }
+    });
+
+    if (!hasUpdate) {
+      alert("Enter at least one value");
+      return;
+    }
+
+    data.updatedAt = new Date();
+
+    await setDoc(
+      doc(db, "users", userId),
+      data,
+      { merge: true }
+    );
+
+    await setDoc(
+      doc(db, "history", dayKey(), userId),
+      data,
+      { merge: true }
+    );
+  };
+
+  /* ================= UI HELPERS ================= */
+
+  function updateToday(prefix, d) {
+    ["pushups", "situps", "squats", "dips"].forEach(ex => {
+      const el = document.getElementById(prefix + ex);
+      if (!el) return;
+
+      const val = d[ex] ?? 0;
+      el.innerText = `${val}/100`;
+
+      const chk = document.getElementById(prefix + ex + "-check");
+      if (chk) chk.checked = val >= 100;
+    });
+  }
+
+  function updateYesterday(prefix, d) {
+    ["pushups", "situps", "squats", "dips"].forEach(ex => {
+      const el = document.getElementById(prefix + ex);
+      if (el) el.innerText = d[ex] ?? 0;
+    });
+  }
+
+  /* ================= LISTENERS ================= */
+
+  // SAURAV
+  onSnapshot(doc(db, "users", "me"), snap => {
+    if (snap.exists()) updateToday("me-", snap.data());
+  });
+  onSnapshot(doc(db, "history", dayKey(1), "me"), snap => {
+    if (snap.exists()) updateYesterday("my-y-", snap.data());
   });
 
-  if (!hasUpdate) return alert("Enter at least one value");
-
-  data.updatedAt = new Date();
-
-  await setDoc(
-    doc(db, "users", userId),
-    data,
-    { merge: true } // 🔥 CRITICAL FIX
-  );
-
-  await setDoc(
-    doc(db, "history", dayKey(), userId),
-    data,
-    { merge: true }
-  );
-};
-
-/* ================= UI HELPERS ================= */
-
-function updateToday(prefix, d) {
-  ["pushups", "situps", "squats", "dips"].forEach(ex => {
-    const el = document.getElementById(prefix + ex);
-    if (!el) return;
-
-    const val = d[ex] ?? 0;
-    el.innerText = `${val}/100`;
-
-    const chk = document.getElementById(prefix + ex + "-check");
-    if (chk) chk.checked = val >= 100;
+  // HARSH
+  onSnapshot(doc(db, "users", "harsh"), snap => {
+    if (snap.exists()) updateToday("harsh-", snap.data());
   });
-}
-
-function updateYesterday(prefix, d) {
-  ["pushups", "situps", "squats", "dips"].forEach(ex => {
-    const el = document.getElementById(prefix + ex);
-    if (el) el.innerText = d[ex] ?? 0;
+  onSnapshot(doc(db, "history", dayKey(1), "harsh"), snap => {
+    if (snap.exists()) updateYesterday("harsh-y-", snap.data());
   });
-}
 
-/* ================= LISTENERS ================= */
+  // SHASHANK
+  onSnapshot(doc(db, "users", "shashank"), snap => {
+    if (!snap.exists()) return;
+    const el = document.getElementById("shashank-situps");
+    if (el) el.innerText = `${snap.data().situps ?? 0}/100`;
+  });
 
-// SAURAV
-onSnapshot(doc(db, "users", "me"), snap => {
-  if (snap.exists()) updateToday("me-", snap.data());
-});
-onSnapshot(doc(db, "history", dayKey(1), "me"), snap => {
-  if (snap.exists()) updateYesterday("my-y-", snap.data());
-});
+  onSnapshot(doc(db, "history", dayKey(1), "shashank"), snap => {
+    if (!snap.exists()) return;
+    const el = document.getElementById("shashank-y-situps");
+    if (el) el.innerText = snap.data().situps ?? 0;
+  });
 
-// HARSH
-onSnapshot(doc(db, "users", "harsh"), snap => {
-  if (snap.exists()) updateToday("harsh-", snap.data());
-});
-onSnapshot(doc(db, "history", dayKey(1), "harsh"), snap => {
-  if (snap.exists()) updateYesterday("harsh-y-", snap.data());
-});
+  /* ================= MESSAGE ================= */
 
-// SHASHANK (SITUPS ONLY)
-onSnapshot(doc(db, "users", "shashank"), snap => {
-  if (!snap.exists()) return;
-  const v = snap.data().situps ?? 0;
-  const el = document.getElementById("shashank-situps");
-  if (el) el.innerText = `${v}/100`;
-});
-onSnapshot(doc(db, "history", dayKey(1), "shashank"), snap => {
-  if (!snap.exists()) return;
-  const el = document.getElementById("shashank-y-situps");
-  if (el) el.innerText = snap.data().situps ?? 0;
-});
+  window.updateMessage = async () => {
+    const textarea = document.getElementById("dailyMessage");
+    if (!textarea || !textarea.value.trim()) return;
 
-/* ================= MESSAGE (FIXED) ================= */
+    await setDoc(
+      doc(db, "message", "daily"),
+      { text: textarea.value, updatedAt: new Date() },
+      { merge: true }
+    );
+  };
 
-window.updateMessage = async () => {
-  if (!dailyMessage.value.trim()) return;
-  await setDoc(
-    doc(db, "message", "daily"),
-    { text: dailyMessage.value, updatedAt: new Date() },
-    { merge: true }
-  );
-};
+  onSnapshot(doc(db, "message", "daily"), snap => {
+    if (!snap.exists()) return;
+    const text = snap.data().text || "";
 
-onSnapshot(doc(db, "message", "daily"), snap => {
-  if (!snap.exists()) return;
-  const text = snap.data().text || "";
+    const input = document.getElementById("dailyMessage");
+    if (input) input.value = text;
 
-  if (document.getElementById("dailyMessage"))
-    dailyMessage.value = text;
+    const view = document.getElementById("messageView");
+    if (view) view.innerText = text;
+  });
 
-  if (document.getElementById("messageView"))
-    messageView.innerText = text;
 });
